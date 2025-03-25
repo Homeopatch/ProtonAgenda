@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	api "awesomeProject/openAPIGenerated"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"net/http"
 
 	"awesomeProject/models"
@@ -36,16 +38,17 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, user)
+	respUser := api.User{
+		CreatedAt: &user.CreatedAt,
+		Email:     openapi_types.Email(user.Email),
+		Id:        user.ResourceID,
+		UpdatedAt: &user.UpdatedAt,
+	}
+	c.JSON(http.StatusCreated, respUser)
 }
 
 // UpdateUser handles updating an existing user's email and password
-func (uc *UserController) UpdateUser(c *gin.Context) {
-	id := c.Param("id")
-	if _, err := uuid.Parse(id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid UUID"})
-		return
-	}
+func (uc *UserController) UpdateUser(c *gin.Context, id uuid.UUID) {
 	var input struct {
 		Email        string `json:"email" binding:"omitempty,email"`
 		PasswordHash string `json:"passwordHash" binding:"omitempty"`
