@@ -1,8 +1,11 @@
 package main
 
 import (
+	"awesomeProject/controllers"
 	"context"
 	"fmt"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"time"
@@ -18,15 +21,12 @@ import (
 
 // Options for the CLI
 type Options struct {
-	Port int `help:"Port to listen on" short:"p" default:"8888"`
-}
-
-// User represents a user in the system
-type User struct {
-	ID        string    `json:"id" format:"uuid" example:"f47ac10b-58cc-4372-a567-0e02b2c3d479" doc:"The unique identifier of the user"`
-	Email     string    `json:"email" format:"email" example:"user@example.com" doc:"The user's email address"`
-	CreatedAt time.Time `json:"createdAt" format:"date-time" example:"2023-12-01T12:00:00Z" doc:"The time when the user was created"`
-	UpdatedAt time.Time `json:"updatedAt" format:"date-time" example:"2023-12-02T15:00:00Z" doc:"The last time the user's details were updated"`
+	DbHost string `help:"Database hostname" env:"POSTGRES_HOST" default:"localhost"`
+	DbPort int    `help:"Database port" env:"POSTGRES_PORT" default:"5432"`
+	DbName string `help:"Database name" env:"POSTGRES_DBNAME" default:"test_db"`
+	DbUser string `help:"Database username" env:"POSTGRES_USER" default:"postgres"`
+	DbPass string `help:"Database password" env:"POSTGRES_PASSWORD" default:"password"`
+	Port   int    `help:"Port to listen on" short:"p" default:"8888"`
 }
 
 // AgendaSource represents an agenda source to fetch agenda items from
@@ -76,33 +76,6 @@ type Pagination struct {
 	PageSize   int `json:"pageSize" doc:"The number of items per page." example:"20"`
 	TotalItems int `json:"totalItems" doc:"The total number of items available." example:"123"`
 	TotalPages int `json:"totalPages" doc:"The total number of pages available." example:"7"`
-}
-
-// RegisterUserInput represents the input for user registration
-type RegisterUserInput struct {
-	Body struct {
-		Email    string `json:"email" format:"email" example:"user@example.com" doc:"User's email address"`
-		Password string `json:"password" format:"password" example:"StrongPass!123" doc:"User's password"`
-	}
-}
-
-// RegisterUserOutput represents the output for user registration
-type RegisterUserOutput struct {
-	Body User
-}
-
-// UpdateUserInput represents the input for updating a user
-type UpdateUserInput struct {
-	ID   string `path:"id" format:"uuid" doc:"The unique identifier (UUID) of the user"`
-	Body struct {
-		Email    string `json:"email,omitempty" format:"email" example:"newemail@example.com" doc:"User's new email address"`
-		Password string `json:"password,omitempty" format:"password" example:"NewPass123!" doc:"User's new password"`
-	}
-}
-
-// UpdateUserOutput represents the output for updating a user
-type UpdateUserOutput struct {
-	Body User
 }
 
 // GetAgendaSourcesInput represents the input for getting agenda sources
@@ -267,7 +240,17 @@ func main() {
 			},
 		}
 		api := humachi.New(router, config)
+		// Connection string
+		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			options.DbHost, options.DbPort, options.DbUser, options.DbPass, options.DbName)
 
+		// Connect to PostgreSQL
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			panic(err.Error())
+		}
+
+		userController := controllers.UserController{DB: db}
 		// Register user endpoints
 		huma.Register(api, huma.Operation{
 			OperationID: "register-user",
@@ -276,15 +259,7 @@ func main() {
 			Summary:     "Register a new user",
 			Description: "Registers a new user by accepting email and password.",
 			Tags:        []string{"Users"},
-		}, func(ctx context.Context, input *RegisterUserInput) (*RegisterUserOutput, error) {
-			// This is a mock implementation
-			resp := &RegisterUserOutput{}
-			resp.Body.ID = uuid.New().String()
-			resp.Body.Email = input.Body.Email
-			resp.Body.CreatedAt = time.Now()
-			resp.Body.UpdatedAt = time.Now()
-			return resp, nil
-		})
+		}, userController.CreateUser)
 
 		huma.Register(api, huma.Operation{
 			OperationID: "update-user",
@@ -296,15 +271,7 @@ func main() {
 			Security: []map[string][]string{
 				{"BearerAuth": {}},
 			},
-		}, func(ctx context.Context, input *UpdateUserInput) (*UpdateUserOutput, error) {
-			// This is a mock implementation
-			resp := &UpdateUserOutput{}
-			resp.Body.ID = input.ID
-			resp.Body.Email = input.Body.Email
-			resp.Body.CreatedAt = time.Now().Add(-24 * time.Hour)
-			resp.Body.UpdatedAt = time.Now()
-			return resp, nil
-		})
+		}, userController.UpdateUser)
 
 		// Register agenda source endpoints
 		huma.Register(api, huma.Operation{
