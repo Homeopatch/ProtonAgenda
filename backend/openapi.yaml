@@ -132,24 +132,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/AgendaSource'
                   pagination:
-                    type: object
-                    properties:
-                      page:
-                        type: integer
-                        description: The current page number.
-                        example: 1
-                      pageSize:
-                        type: integer
-                        description: The number of items per page.
-                        example: 20
-                      totalItems:
-                        type: integer
-                        description: The total number of items available.
-                        example: 123
-                      totalPages:
-                        type: integer
-                        description: The total number of pages available.
-                        example: 7
+                    $ref: '#/components/schemas/Pagination'
         '500':
           description: Internal server error
     post:
@@ -279,6 +262,122 @@ paths:
         '500':
           description: Internal server error
 
+  /api/agenda-items:
+    post:
+      summary: Create or update multiple agenda items
+      description: Accepts multiple AgendaItem objects and creates or updates them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/AgendaItem'
+      responses:
+        '200':
+          description: Agenda items processed successfully
+        '400':
+          description: Invalid input
+        '500':
+          description: Internal server error
+
+    get:
+      summary: Query agenda items
+      description: Retrieves agenda items based on query parameters.
+      parameters:
+        - name: agendaSourceID
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: userID
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: startTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of agenda items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgendaItem'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '500':
+          description: Internal server error
+    delete:
+      summary: Delete one or multiple agenda items
+      description: Deletes agenda items by their ResourceIDs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        '204':
+          description: Agenda items deleted successfully
+        '400':
+          description: Invalid input
+        '500':
+          description: Internal server error
+
+  /api/agenda-items/{id}:
+    get:
+      summary: Get an agenda item by ID
+      description: Retrieves an agenda item by its ResourceID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Agenda item retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaItem'
+        '404':
+          description: Agenda item not found
+        '500':
+          description: Internal server error
+
 components:
   securitySchemes:
     BearerAuth:
@@ -353,3 +452,43 @@ components:
         - id
         - url
         - type
+    AgendaItem:
+      type: object
+      properties:
+        ResourceID:
+          type: string
+          format: uuid
+          description: The unique identifier of the agenda item
+        StartTime:
+          type: string
+          format: date-time
+        EndTime:
+          type: string
+          format: date-time
+        Description:
+          type: string
+        AgendaSourceID:
+          type: string
+          format: uuid
+        UserID:
+          type: string
+          format: uuid
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: The current page number.
+          example: 1
+        pageSize:
+          type: integer
+          description: The number of items per page.
+          example: 20
+        totalItems:
+          type: integer
+          description: The total number of items available.
+          example: 123
+        totalPages:
+          type: integer
+          description: The total number of pages available.
+          example: 7
