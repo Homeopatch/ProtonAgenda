@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -616,19 +617,14 @@ func main() {
 			return resp, nil
 		})
 
-		// Configure security schemes
-		api.OpenAPI().Components.SecuritySchemes = map[string]*huma.SecurityScheme{
-			"BearerAuth": {
-				Type:         "http",
-				Scheme:       "bearer",
-				BearerFormat: "JWT",
-			},
-		}
-
 		// Tell the CLI how to start the router
 		hooks.OnStart(func() {
 			fmt.Printf("Server started on port %d\n", options.Port)
-			http.ListenAndServe(fmt.Sprintf(":%d", options.Port), router)
+			err := http.ListenAndServe(fmt.Sprintf(":%d", options.Port), router)
+			if err != nil {
+				log.Fatalf("Error starting server: %v", err)
+			}
+
 		})
 	})
 
