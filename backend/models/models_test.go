@@ -11,36 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func dropTestDatabase(host string, port string, user string, password string, dbname string) error {
-	// Connect to the "postgres" database for administrative tasks
-	adminDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=disable", host, port, user, password)
-	adminDB, err := gorm.Open(postgres.Open(adminDSN), &gorm.Config{})
-	if err != nil {
-		return fmt.Errorf("failed to connect to postgres database: %w", err)
-	}
-	defer func() {
-		sqlDB, _ := adminDB.DB()
-		err := sqlDB.Close()
-		if err != nil {
-			println(fmt.Errorf("failed to close database connection: %w", err))
-			return
-		}
-	}()
-
-	// Check if the test database exists and drop it if it does
-	err = adminDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbname)).Error
-	if err != nil {
-		return fmt.Errorf("failed to drop test database: %w", err)
-	}
-
-	// Create the test database
-	err = adminDB.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbname)).Error
-	if err != nil {
-		return fmt.Errorf("failed to create test database: %w", err)
-	}
-	return nil
-}
-
 // Setup PostgreSQL database for tests
 func setupTestDB() (*gorm.DB, error) {
 	// Use environment variables or default values
