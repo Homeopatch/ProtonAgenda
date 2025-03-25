@@ -484,6 +484,45 @@ paths:
           description: Agenda invite not found
         '500':
           description: Internal server error
+  /api/view-agenda-invite/{id}:
+    get:
+      summary: Publicly available view of a user agenda.
+      description: Retrieves a list of AgendaItemViews for the specified invite ID within the given date range.
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier (UUID) of the agenda invite
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: DateFrom
+          in: query
+          description: The start date and time for filtering agenda items
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: DateTo
+          in: query
+          description: The end date and time for filtering agenda items
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: List of AgendaItemViews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgendaItemView'
+        '404':
+          description: Agenda invite not found
+        '500':
+          description: Internal server error
 
 components:
   securitySchemes:
@@ -640,3 +679,17 @@ components:
           type: integer
           description: The total number of pages available.
           example: 7
+
+    AgendaItemView:
+      description: "A view of an agenda item, which 
+      does not include sensitive data about the user."
+      type: object
+      properties:
+        StartTime:
+          type: string
+          format: date-time
+        EndTime:
+          type: string
+          format: date-time
+        Description:
+          type: string
