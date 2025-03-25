@@ -86,6 +86,72 @@ paths:
           description: Internal server error
 
   /api/agenda-sources:
+    get:
+      summary: Get a list of agenda sources
+      security:
+        - BearerAuth: [ ]
+      description: Retrieves a list of all agenda sources. Supports ordering by `updatedAt` and pagination.
+      parameters:
+        - name: orderBy
+          in: query
+          description: Order the results by `updatedAt` in ascending (`asc`) or descending (`desc`) order.
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: page
+          in: query
+          description: The page number to retrieve (1-based).
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          description: The number of items to include per page.
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of agenda sources retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgendaSource'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        description: The current page number.
+                        example: 1
+                      pageSize:
+                        type: integer
+                        description: The number of items per page.
+                        example: 20
+                      totalItems:
+                        type: integer
+                        description: The total number of items available.
+                        example: 123
+                      totalPages:
+                        type: integer
+                        description: The total number of pages available.
+                        example: 7
+        '500':
+          description: Internal server error
     post:
       summary: Create a new agenda source
       security:
