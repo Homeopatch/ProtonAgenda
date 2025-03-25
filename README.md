@@ -1,7 +1,6 @@
 # TODO:
-
-Still decide how to do model tests. Maybe stick with the basic tests.
-
+Develop API
+Split API generated code into several files
 
 # Vue.js + Go Starter Project
 

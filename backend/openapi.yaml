@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: User Registration API
+  description: API for registering and updating user information.
+  version: 1.1.0
+
+paths:
+  /api/register:
+    post:
+      summary: Register a new user
+      description: Registers a new user by accepting email and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: StrongPass!123
+              required:
+                - email
+                - password
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resourceId:
+                    type: string
+                    format: uuid
+                    description: The unique identifier of the user
+                    example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                  email:
+                    type: string
+                    format: email
+                    description: The registered email
+                    example: user@example.com
+        '400':
+          description: Invalid input or email already exists
+        '422':
+          description: Password does not meet complexity requirements
+        '500':
+          description: Internal server error
+
+  /api/users/{id}:
+    put:
+      summary: Update a user's account details
+      security:
+        - BearerAuth: [ ]
+      description: Updates the email and/or password for the user specified by the `id`.
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier (UUID) of the user
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: newemail@example.com
+                password:
+                  type: string
+                  format: password
+                  example: NewPass123!
+              required: []
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input or UUID
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT # Optional: Specify token format
+  schemas:
+    User:
+      type: object
+      properties:
+        resourceId:
+          type: string
+          format: uuid
+          description: The unique identifier of the user
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        email:
+          type: string
+          format: email
+          description: The user's email address
+          example: user@example.com
+        createdAt:
+          type: string
+          format: date-time
+          description: The time when the user was created
+          example: "2023-12-01T12:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: The last time the user's details were updated
+          example: "2023-12-02T15:00:00Z"
