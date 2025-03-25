@@ -69,11 +69,3 @@ type AgendaInvite struct {
 	AgendaSources     []AgendaSource     `gorm:"many2many:invite_sources;"`
 	ProceduralAgendas []ProceduralAgenda `gorm:"many2many:invite_procedural_agendas;"`
 }
-
-func (user AgendaInvite) BeforeCreate(tx *gorm.DB) error {
-	field := tx.Statement.Schema.LookUpField("SlotSizes")
-	if field.DataType == "json" {
-		// do something
-	}
-	return nil
-}

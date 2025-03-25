@@ -264,6 +264,8 @@ paths:
 
   /api/agenda-items:
     post:
+      security:
+        - BearerAuth: [ ]
       summary: Create or update multiple agenda items
       description: Accepts multiple AgendaItem objects and creates or updates them.
       requestBody:
@@ -283,6 +285,8 @@ paths:
           description: Internal server error
 
     get:
+      security:
+        - BearerAuth: [ ]
       summary: Query agenda items
       description: Retrieves agenda items based on query parameters.
       parameters:
@@ -335,28 +339,11 @@ paths:
                     $ref: '#/components/schemas/Pagination'
         '500':
           description: Internal server error
-    delete:
-      summary: Delete one or multiple agenda items
-      description: Deletes agenda items by their ResourceIDs.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: string
-                format: uuid
-      responses:
-        '204':
-          description: Agenda items deleted successfully
-        '400':
-          description: Invalid input
-        '500':
-          description: Internal server error
 
   /api/agenda-items/{id}:
     get:
+      security:
+        - BearerAuth: [ ]
       summary: Get an agenda item by ID
       description: Retrieves an agenda item by its ResourceID.
       parameters:
@@ -375,6 +362,126 @@ paths:
                 $ref: '#/components/schemas/AgendaItem'
         '404':
           description: Agenda item not found
+        '500':
+          description: Internal server error
+    delete:
+      security:
+        - BearerAuth: [ ]
+      summary: Delete one or multiple agenda items
+      description: Deletes agenda items by their ResourceIDs.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Agenda items deleted successfully
+        '400':
+          description: Invalid input
+        '500':
+          description: Internal server error
+
+  /api/agenda-invites:
+    post:
+      security:
+        - BearerAuth: [ ]
+      summary: Create a new agenda invite
+      description: Creates a new AgendaInvite.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgendaInvite'
+      responses:
+        '201':
+          description: Agenda invite created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaInvite'
+        '400':
+          description: Invalid input
+        '500':
+          description: Internal server error
+
+  /api/agenda-invites/{id}:
+    get:
+      security:
+        - BearerAuth: [ ]
+      summary: Get an agenda invite by ID
+      description: Retrieves an AgendaInvite by its ResourceID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Agenda invite retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaInvite'
+        '404':
+          description: Agenda invite not found
+        '500':
+          description: Internal server error
+
+    put:
+      security:
+        - BearerAuth: [ ]
+      summary: Update an agenda invite by ID
+      description: Updates an AgendaInvite by its ResourceID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgendaInvite'
+      responses:
+        '200':
+          description: Agenda invite updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaInvite'
+        '400':
+          description: Invalid input or UUID
+        '404':
+          description: Agenda invite not found
+        '500':
+          description: Internal server error
+
+    delete:
+      security:
+        - BearerAuth: [ ]
+      summary: Delete an agenda invite by ID
+      description: Deletes an AgendaInvite by its ResourceID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Agenda invite deleted successfully
+        '404':
+          description: Agenda invite not found
         '500':
           description: Internal server error
 
@@ -473,6 +580,47 @@ components:
         UserID:
           type: string
           format: uuid
+    AgendaInvite:
+      type: object
+      properties:
+        ResourceID:
+          type: string
+          format: uuid
+          description: The unique identifier of the agenda invite
+        UserID:
+          type: string
+          format: uuid
+          description: The ID of the user associated with the invite
+        Description:
+          type: string
+        ExpiresAt:
+          type: string
+          format: date-time
+        NotBefore:
+          type: string
+          format: date-time
+        NotAfter:
+          type: string
+          format: date-time
+        PaddingBefore:
+          type: string
+          description: Duration before the event
+        PaddingAfter:
+          type: string
+          description: Duration after the event
+        SlotSizes:
+          type: array
+          items:
+            type: string
+          description: Array of slot sizes as durations
+        AgendaSources:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgendaSource'
+#        ProceduralAgendas:
+#          type: array
+#          items:
+#            $ref: '#/components/schemas/ProceduralAgenda'
     Pagination:
       type: object
       properties:
