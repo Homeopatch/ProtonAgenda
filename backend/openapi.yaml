@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: User Registration API
-  description: API for registering and updating user information.
+  title: User and Agenda Source Management API
+  description: API for managing users and their agenda sources.
   version: 1.1.0
 
 paths:
@@ -33,18 +33,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  resourceId:
-                    type: string
-                    format: uuid
-                    description: The unique identifier of the user
-                    example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-                  email:
-                    type: string
-                    format: email
-                    description: The registered email
-                    example: user@example.com
+                $ref: '#/components/schemas/User'
         '400':
           description: Invalid input or email already exists
         '422':
@@ -96,17 +85,146 @@ paths:
         '500':
           description: Internal server error
 
+  /api/agenda-sources:
+    post:
+      summary: Create a new agenda source
+      security:
+        - BearerAuth: [ ]
+      description: Creates a new agenda source with a URL and type.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://example.com/calendar
+                type:
+                  type: string
+                  enum:
+                    - proton
+                  example: proton
+              required:
+                - url
+                - type
+      responses:
+        '201':
+          description: Agenda source created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaSource'
+        '400':
+          description: Invalid input
+        '500':
+          description: Internal server error
+
+  /api/agenda-sources/{id}:
+    get:
+      summary: Get an agenda source by ID
+      security:
+        - BearerAuth: [ ]
+      description: Retrieves an agenda source by its unique identifier.
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier (UUID) of the agenda source
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Agenda source retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaSource'
+        '404':
+          description: Agenda source not found
+        '500':
+          description: Internal server error
+
+    put:
+      summary: Update an agenda source by ID
+      security:
+        - BearerAuth: [ ]
+      description: Updates the URL and/or type of an agenda source by its unique identifier.
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier (UUID) of the agenda source
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://newexample.com/calendar
+                type:
+                  type: string
+                  enum:
+                    - proton
+                  example: proton
+              required: []
+      responses:
+        '200':
+          description: Agenda source updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaSource'
+        '400':
+          description: Invalid input or UUID
+        '404':
+          description: Agenda source not found
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: Delete an agenda source by ID
+      security:
+        - BearerAuth: [ ]
+      description: Deletes an agenda source by its unique identifier.
+      parameters:
+        - name: id
+          in: path
+          description: The unique identifier (UUID) of the agenda source
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Agenda source deleted successfully
+        '404':
+          description: Agenda source not found
+        '500':
+          description: Internal server error
+
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT # Optional: Specify token format
+
   schemas:
     User:
       type: object
       properties:
-        resourceId:
+        id:
           type: string
           format: uuid
           description: The unique identifier of the user
@@ -126,3 +244,46 @@ components:
           format: date-time
           description: The last time the user's details were updated
           example: "2023-12-02T15:00:00Z"
+      required:
+        - id
+        - email
+
+    AgendaSource:
+      type: object
+      description: "Agenda source to fetch agenda items from"
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the agenda source
+          example: "c29ac10b-58cc-4372-a567-0e02b2c3d479"
+        url:
+          type: string
+          format: uri
+          description: The URL of the agenda source
+          example: https://example.com/calendar
+        type:
+          type: string
+          enum:
+            - proton
+          description: The type of the agenda source
+          example: proton
+        userId:
+          type: integer
+          format: uuid
+          description: The ID of the user who owns the agenda source
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        createdAt:
+          type: string
+          format: date-time
+          description: The time when the agenda source was created
+          example: "2023-12-01T12:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: The last time the agenda source was updated
+          example: "2023-12-02T15:00:00Z"
+      required:
+        - id
+        - url
+        - type
