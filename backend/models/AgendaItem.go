@@ -8,7 +8,7 @@ import (
 
 type AgendaItem struct {
 	gorm.Model
-	ExternalID     uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
+	ResourceID     uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
 	StartTime      time.Time `gorm:"index"`
 	EndTime        time.Time
 	Description    string

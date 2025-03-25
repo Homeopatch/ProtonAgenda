@@ -7,10 +7,8 @@ import (
 )
 
 type AgendaInvite struct {
-	ID                uuid.UUID `gorm:"primarykey;type:uuid;default:gen_random_uuid()"`
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	DeletedAt         gorm.DeletedAt `gorm:"index"`
+	gorm.Model
+	ResourceID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
 	UserID            uint
 	Description       string
 	ExpiresAt         time.Time

@@ -1,13 +1,14 @@
 package models
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"net/url"
 )
 
 type AgendaSource struct {
 	gorm.Model
-	Url         url.URL
+	ResourceID  uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
+	Url         string
 	UserID      uint
 	AgendaItems []AgendaItem `gorm:"constraint:OnDelete:SET NULL;"`
 }

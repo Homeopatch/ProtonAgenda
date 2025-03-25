@@ -1,22 +1,85 @@
 package models
 
 import (
-	"net/url"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-// Setup in-memory database for tests
+func dropTestDatabase(host string, port string, user string, password string, dbname string) error {
+	// Connect to the "postgres" database for administrative tasks
+	adminDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=disable", host, port, user, password)
+	adminDB, err := gorm.Open(postgres.Open(adminDSN), &gorm.Config{})
+	if err != nil {
+		return fmt.Errorf("failed to connect to postgres database: %w", err)
+	}
+	defer func() {
+		sqlDB, _ := adminDB.DB()
+		err := sqlDB.Close()
+		if err != nil {
+			println(fmt.Errorf("failed to close database connection: %w", err))
+			return
+		}
+	}()
+
+	// Check if the test database exists and drop it if it does
+	err = adminDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbname)).Error
+	if err != nil {
+		return fmt.Errorf("failed to drop test database: %w", err)
+	}
+
+	// Create the test database
+	err = adminDB.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbname)).Error
+	if err != nil {
+		return fmt.Errorf("failed to create test database: %w", err)
+	}
+	return nil
+}
+
+// Setup PostgreSQL database for tests
 func setupTestDB() (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	// Use environment variables or default values
+	host := os.Getenv("POSTGRES_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+	port := os.Getenv("POSTGRES_PORT")
+	if port == "" {
+		port = "5432"
+	}
+	user := os.Getenv("POSTGRES_USER")
+	if user == "" {
+		user = "postgres"
+	}
+	password := os.Getenv("POSTGRES_PASSWORD")
+	if password == "" {
+		password = "password"
+	}
+	dbname := os.Getenv("POSTGRES_DB")
+	if dbname == "" {
+		dbname = "test_db"
+	}
+
+	//err := dropTestDatabase(host, port, user, password, dbname)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	// Connection string
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+
+	// Connect to PostgreSQL
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
+
+	db.Exec("DROP TABLE IF EXISTS test_db")
 
 	// Auto-migrate all models
 	err = db.AutoMigrate(&User{}, &AgendaInvite{}, &AgendaSource{}, &AgendaItem{}, &ProceduralAgenda{})
@@ -61,7 +124,6 @@ func TestAgendaInviteCreation(t *testing.T) {
 	db.Create(&user)
 
 	invite := AgendaInvite{
-		ID:          uuid.New(),
 		UserID:      user.ID,
 		Description: "Team Meeting",
 		ExpiresAt:   time.Now().Add(24 * time.Hour),
@@ -94,13 +156,13 @@ func TestAgendaSourceAndItemRelations(t *testing.T) {
 	db.Create(&user)
 
 	source := AgendaSource{
-		Url:    url.URL{Scheme: "https", Host: "example.com", Path: "/agenda"},
+		//Url:    url.URL{Scheme: "https", Host: "example.com", Path: "/agenda"},
+		Url:    "https://foo.com/agenda",
 		UserID: user.ID,
 	}
 	db.Create(&source)
 
 	item := AgendaItem{
-		ExternalID:     uuid.New(),
 		StartTime:      time.Now(),
 		EndTime:        time.Now().Add(1 * time.Hour),
 		Description:    "Sample Agenda Item",
@@ -145,29 +207,43 @@ func TestAgendaInviteProceduralAgendaRelationship(t *testing.T) {
 	db, err := setupTestDB()
 	assert.NoError(t, err)
 
+	// Create a user for the invite
+	user := User{
+		Email:        "testuser@example.com",
+		PasswordHash: "hashedpassword",
+	}
+	result := db.Create(&user)
+	assert.NoError(t, result.Error)
+	assert.NotZero(t, user.ID)
+
+	// Create an AgendaInvite associated with the user
 	invite := AgendaInvite{
-		ID:          uuid.New(),
+		UserID:      user.ID, // Associate with the created user
 		Description: "Project Kickoff",
 		ExpiresAt:   time.Now().Add(24 * time.Hour),
 		NotBefore:   time.Now(),
 		NotAfter:    time.Now().Add(2 * time.Hour),
 	}
 
+	// Create a ProceduralAgenda
 	agenda := ProceduralAgenda{
 		Descriptor:  "Kickoff",
 		Description: "Agenda for Project Kickoff",
 	}
 
 	// Create Invite and Agenda
-	db.Create(&invite)
-	db.Create(&agenda)
+	result = db.Create(&invite)
+	assert.NoError(t, result.Error)
+	result = db.Create(&agenda)
+	assert.NoError(t, result.Error)
 
 	// Associate ProceduralAgenda with AgendaInvite
-	db.Model(&invite).Association("ProceduralAgendas").Append(&agenda)
+	err = db.Model(&invite).Association("ProceduralAgendas").Append(&agenda)
+	assert.NoError(t, err)
 
 	// Verify relationship
 	var fetchedInvite AgendaInvite
-	db.Preload("ProceduralAgendas").First(&fetchedInvite, invite.ID)
+	err = db.Preload("ProceduralAgendas").First(&fetchedInvite, invite.ID).Error
 	assert.NoError(t, err)
 	assert.Len(t, fetchedInvite.ProceduralAgendas, 1)
 	assert.Equal(t, agenda.Descriptor, fetchedInvite.ProceduralAgendas[0].Descriptor)

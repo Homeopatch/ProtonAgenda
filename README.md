@@ -1,3 +1,8 @@
+# TODO:
+
+Still decide how to do model tests. Maybe stick with the basic tests.
+
+
 # Vue.js + Go Starter Project
 
 This is a simple starter template for a project with a Go backend and a Vue.js frontend.
