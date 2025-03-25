@@ -35,11 +35,6 @@ func setupTestDB() (*gorm.DB, error) {
 		dbname = "test_db"
 	}
 
-	//err := dropTestDatabase(host, port, user, password, dbname)
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	// Connection string
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 
@@ -48,8 +43,6 @@ func setupTestDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	db.Exec("DROP TABLE IF EXISTS test_db")
 
 	// Auto-migrate all models
 	err = db.AutoMigrate(&User{}, &AgendaInvite{}, &AgendaSource{}, &AgendaItem{}, &ProceduralAgenda{})
@@ -94,11 +87,13 @@ func TestAgendaInviteCreation(t *testing.T) {
 	db.Create(&user)
 
 	invite := AgendaInvite{
-		UserID:      user.ID,
-		Description: "Team Meeting",
-		ExpiresAt:   time.Now().Add(24 * time.Hour),
-		NotBefore:   time.Now(),
-		NotAfter:    time.Now().Add(2 * time.Hour),
+		UserID:       user.ID,
+		Description:  "Team Meeting",
+		ExpiresAt:    time.Now().Add(24 * time.Hour),
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(2 * time.Hour),
+		PaddingAfter: 15 * time.Minute,
+		SlotSizes:    Durations{30 * time.Minute, 1 * time.Hour},
 	}
 
 	// Create AgendaInvite
@@ -112,6 +107,8 @@ func TestAgendaInviteCreation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, invite.Description, fetchedInvite.Description)
 	assert.Equal(t, user.ID, fetchedInvite.UserID)
+	assert.Equal(t, invite.PaddingAfter, fetchedInvite.PaddingAfter)
+	assert.Equal(t, invite.SlotSizes[1], fetchedInvite.SlotSizes[1])
 }
 
 // Test AgendaSource and AgendaItem Relations
