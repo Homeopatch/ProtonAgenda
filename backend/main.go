@@ -55,9 +55,10 @@ func main() {
 
 		// Create user controller
 		userController := &controllers.UserController{DB: db}
+		agendaSourceController := &controllers.AgendaSourceController{DB: db}
 
 		// Register all routes
-		addRoutes(api, userController)
+		addRoutes(api, userController, agendaSourceController)
 
 		// Tell the CLI how to start the router
 		hooks.OnStart(func() {

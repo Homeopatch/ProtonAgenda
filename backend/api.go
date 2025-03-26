@@ -10,16 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// AgendaSource represents an agenda source to fetch agenda items from
-type AgendaSource struct {
-	ID        string    `json:"id" format:"uuid" example:"c29ac10b-58cc-4372-a567-0e02b2c3d479" doc:"The unique identifier of the agenda source"`
-	URL       string    `json:"url" format:"uri" example:"https://example.com/calendar" doc:"The URL of the agenda source"`
-	Type      string    `json:"type" enum:"proton" example:"proton" doc:"The type of the agenda source"`
-	UserID    string    `json:"userId" format:"uuid" example:"f47ac10b-58cc-4372-a567-0e02b2c3d479" doc:"The ID of the user who owns the agenda source"`
-	CreatedAt time.Time `json:"createdAt" format:"date-time" example:"2023-12-01T12:00:00Z" doc:"The time when the agenda source was created"`
-	UpdatedAt time.Time `json:"updatedAt" format:"date-time" example:"2023-12-02T15:00:00Z" doc:"The last time the agenda source was updated"`
-}
-
 // AgendaItem represents an agenda item
 type AgendaItem struct {
 	ResourceID     string    `json:"ResourceID" format:"uuid" doc:"The unique identifier of the agenda item"`
@@ -32,16 +22,16 @@ type AgendaItem struct {
 
 // AgendaInvite represents an invitation to view a user's agenda
 type AgendaInvite struct {
-	ResourceID    string         `json:"ResourceID" format:"uuid" doc:"The unique identifier of the agenda invite"`
-	UserID        string         `json:"UserID" format:"uuid" doc:"The ID of the user associated with the invite"`
-	Description   string         `json:"Description"`
-	ExpiresAt     time.Time      `json:"ExpiresAt" format:"date-time"`
-	NotBefore     time.Time      `json:"NotBefore" format:"date-time"`
-	NotAfter      time.Time      `json:"NotAfter" format:"date-time"`
-	PaddingBefore string         `json:"PaddingBefore" doc:"Duration before the event"`
-	PaddingAfter  string         `json:"PaddingAfter" doc:"Duration after the event"`
-	SlotSizes     []string       `json:"SlotSizes" doc:"Array of slot sizes as durations"`
-	AgendaSources []AgendaSource `json:"AgendaSources"`
+	ResourceID    string                     `json:"ResourceID" format:"uuid" doc:"The unique identifier of the agenda invite"`
+	UserID        string                     `json:"UserID" format:"uuid" doc:"The ID of the user associated with the invite"`
+	Description   string                     `json:"Description"`
+	ExpiresAt     time.Time                  `json:"ExpiresAt" format:"date-time"`
+	NotBefore     time.Time                  `json:"NotBefore" format:"date-time"`
+	NotAfter      time.Time                  `json:"NotAfter" format:"date-time"`
+	PaddingBefore string                     `json:"PaddingBefore" doc:"Duration before the event"`
+	PaddingAfter  string                     `json:"PaddingAfter" doc:"Duration after the event"`
+	SlotSizes     []string                   `json:"SlotSizes" doc:"Array of slot sizes as durations"`
+	AgendaSources []controllers.AgendaSource `json:"AgendaSources"`
 }
 
 // AgendaItemView represents a view of an agenda item without sensitive user data
@@ -49,71 +39,6 @@ type AgendaItemView struct {
 	StartTime   time.Time `json:"StartTime" format:"date-time"`
 	EndTime     time.Time `json:"EndTime" format:"date-time"`
 	Description string    `json:"Description"`
-}
-
-// Pagination represents pagination information
-type Pagination struct {
-	Page       int `json:"page" doc:"The current page number." example:"1"`
-	PageSize   int `json:"pageSize" doc:"The number of items per page." example:"20"`
-	TotalItems int `json:"totalItems" doc:"The total number of items available." example:"123"`
-	TotalPages int `json:"totalPages" doc:"The total number of pages available." example:"7"`
-}
-
-// GetAgendaSourcesInput represents the input for getting agenda sources
-type GetAgendaSourcesInput struct {
-	OrderBy  string `query:"orderBy" enum:"asc,desc" default:"asc" doc:"Order the results by 'updatedAt' in ascending ('asc') or descending ('desc') order."`
-	Page     int    `query:"page" minimum:"1" default:"1" doc:"The page number to retrieve (1-based)."`
-	PageSize int    `query:"pageSize" minimum:"1" maximum:"100" default:"20" doc:"The number of items to include per page."`
-}
-
-// GetAgendaSourcesOutput represents the output for getting agenda sources
-type GetAgendaSourcesOutput struct {
-	Body struct {
-		Data       []AgendaSource `json:"data"`
-		Pagination Pagination     `json:"pagination"`
-	}
-}
-
-// CreateAgendaSourceInput represents the input for creating an agenda source
-type CreateAgendaSourceInput struct {
-	Body struct {
-		URL  string `json:"url" format:"uri" example:"https://example.com/calendar" doc:"The URL of the agenda source"`
-		Type string `json:"type" enum:"proton" example:"proton" doc:"The type of the agenda source"`
-	}
-}
-
-// CreateAgendaSourceOutput represents the output for creating an agenda source
-type CreateAgendaSourceOutput struct {
-	Body AgendaSource
-}
-
-// GetAgendaSourceInput represents the input for getting an agenda source
-type GetAgendaSourceInput struct {
-	ID string `path:"id" format:"uuid" doc:"The unique identifier (UUID) of the agenda source"`
-}
-
-// GetAgendaSourceOutput represents the output for getting an agenda source
-type GetAgendaSourceOutput struct {
-	Body AgendaSource
-}
-
-// UpdateAgendaSourceInput represents the input for updating an agenda source
-type UpdateAgendaSourceInput struct {
-	ID   string `path:"id" format:"uuid" doc:"The unique identifier (UUID) of the agenda source"`
-	Body struct {
-		URL  string `json:"url,omitempty" format:"uri" example:"https://newexample.com/calendar" doc:"The URL of the agenda source"`
-		Type string `json:"type,omitempty" enum:"proton" example:"proton" doc:"The type of the agenda source"`
-	}
-}
-
-// UpdateAgendaSourceOutput represents the output for updating an agenda source
-type UpdateAgendaSourceOutput struct {
-	Body AgendaSource
-}
-
-// DeleteAgendaSourceInput represents the input for deleting an agenda source
-type DeleteAgendaSourceInput struct {
-	ID string `path:"id" format:"uuid" doc:"The unique identifier (UUID) of the agenda source"`
 }
 
 // CreateAgendaItemsInput represents the input for creating agenda items
@@ -134,8 +59,8 @@ type GetAgendaItemsInput struct {
 // GetAgendaItemsOutput represents the output for getting agenda items
 type GetAgendaItemsOutput struct {
 	Body struct {
-		Data       []AgendaItem `json:"data"`
-		Pagination Pagination   `json:"pagination"`
+		Data       []AgendaItem           `json:"data"`
+		Pagination controllers.Pagination `json:"pagination"`
 	}
 }
 
@@ -203,7 +128,7 @@ type ViewAgendaInviteOutput struct {
 }
 
 // addRoutes registers all API routes with the provided API instance
-func addRoutes(api huma.API, userController *controllers.UserController) {
+func addRoutes(api huma.API, userController *controllers.UserController, agendaSourceController *controllers.AgendaSourceController) {
 	// Register user endpoints
 	huma.Register(api, huma.Operation{
 		OperationID: "register-user",
@@ -237,27 +162,7 @@ func addRoutes(api huma.API, userController *controllers.UserController) {
 		Security: []map[string][]string{
 			{"BearerAuth": {}},
 		},
-	}, func(ctx context.Context, input *GetAgendaSourcesInput) (*GetAgendaSourcesOutput, error) {
-		// This is a mock implementation
-		resp := &GetAgendaSourcesOutput{}
-		resp.Body.Data = []AgendaSource{
-			{
-				ID:        uuid.New().String(),
-				URL:       "https://example.com/calendar",
-				Type:      "proton",
-				UserID:    uuid.New().String(),
-				CreatedAt: time.Now().Add(-24 * time.Hour),
-				UpdatedAt: time.Now(),
-			},
-		}
-		resp.Body.Pagination = Pagination{
-			Page:       input.Page,
-			PageSize:   input.PageSize,
-			TotalItems: 1,
-			TotalPages: 1,
-		}
-		return resp, nil
-	})
+	}, agendaSourceController.GetAgendaSources)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "create-agenda-source",
@@ -269,17 +174,7 @@ func addRoutes(api huma.API, userController *controllers.UserController) {
 		Security: []map[string][]string{
 			{"BearerAuth": {}},
 		},
-	}, func(ctx context.Context, input *CreateAgendaSourceInput) (*CreateAgendaSourceOutput, error) {
-		// This is a mock implementation
-		resp := &CreateAgendaSourceOutput{}
-		resp.Body.ID = uuid.New().String()
-		resp.Body.URL = input.Body.URL
-		resp.Body.Type = input.Body.Type
-		resp.Body.UserID = uuid.New().String()
-		resp.Body.CreatedAt = time.Now()
-		resp.Body.UpdatedAt = time.Now()
-		return resp, nil
-	})
+	}, agendaSourceController.CreateAgendaSource)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "get-agenda-source",
@@ -291,17 +186,7 @@ func addRoutes(api huma.API, userController *controllers.UserController) {
 		Security: []map[string][]string{
 			{"BearerAuth": {}},
 		},
-	}, func(ctx context.Context, input *GetAgendaSourceInput) (*GetAgendaSourceOutput, error) {
-		// This is a mock implementation
-		resp := &GetAgendaSourceOutput{}
-		resp.Body.ID = input.ID
-		resp.Body.URL = "https://example.com/calendar"
-		resp.Body.Type = "proton"
-		resp.Body.UserID = uuid.New().String()
-		resp.Body.CreatedAt = time.Now().Add(-24 * time.Hour)
-		resp.Body.UpdatedAt = time.Now()
-		return resp, nil
-	})
+	}, agendaSourceController.GetAgendaSource)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "update-agenda-source",
@@ -313,17 +198,7 @@ func addRoutes(api huma.API, userController *controllers.UserController) {
 		Security: []map[string][]string{
 			{"BearerAuth": {}},
 		},
-	}, func(ctx context.Context, input *UpdateAgendaSourceInput) (*UpdateAgendaSourceOutput, error) {
-		// This is a mock implementation
-		resp := &UpdateAgendaSourceOutput{}
-		resp.Body.ID = input.ID
-		resp.Body.URL = input.Body.URL
-		resp.Body.Type = input.Body.Type
-		resp.Body.UserID = uuid.New().String()
-		resp.Body.CreatedAt = time.Now().Add(-24 * time.Hour)
-		resp.Body.UpdatedAt = time.Now()
-		return resp, nil
-	})
+	}, agendaSourceController.UpdateAgendaSource)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "delete-agenda-source",
@@ -335,10 +210,7 @@ func addRoutes(api huma.API, userController *controllers.UserController) {
 		Security: []map[string][]string{
 			{"BearerAuth": {}},
 		},
-	}, func(ctx context.Context, input *DeleteAgendaSourceInput) (*struct{}, error) {
-		// This is a mock implementation - just return 204 No Content
-		return nil, nil
-	})
+	}, agendaSourceController.DeleteAgendaSource)
 
 	// Register agenda item endpoints
 	huma.Register(api, huma.Operation{
@@ -379,7 +251,7 @@ func addRoutes(api huma.API, userController *controllers.UserController) {
 				UserID:         uuid.New().String(),
 			},
 		}
-		resp.Body.Pagination = Pagination{
+		resp.Body.Pagination = controllers.Pagination{
 			Page:       input.Page,
 			PageSize:   input.PageSize,
 			TotalItems: 1,
@@ -466,7 +338,7 @@ func addRoutes(api huma.API, userController *controllers.UserController) {
 		resp.Body.PaddingBefore = "30m"
 		resp.Body.PaddingAfter = "30m"
 		resp.Body.SlotSizes = []string{"1h", "30m"}
-		resp.Body.AgendaSources = []AgendaSource{
+		resp.Body.AgendaSources = []controllers.AgendaSource{
 			{
 				ID:        uuid.New().String(),
 				URL:       "https://example.com/calendar",
